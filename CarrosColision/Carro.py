@@ -23,23 +23,23 @@ class Car:
             [-1.0, 0.5, 1.0],   [1.0, 0.5, 1.0],    [1.0, 0.5, -1.0],   [-1.0, 0.5, -1.0]
         ])
         
-        self.scale = Scale
+        self.scale = Scale + 2
         self.radio = math.sqrt(self.scale*self.scale + self.scale*self.scale)
         self.DimBoard = dim
         
-        # Initialize random position
+        #Initialize random position
         self.Position = []
         self.Position.append(random.randint(-1 * self.DimBoard, self.DimBoard))
         self.Position.append(self.scale)
         self.Position.append(random.randint(-1 * self.DimBoard, self.DimBoard))
         
-        # Initialize random direction
+        #Initialize random direction
         self.Direction = []
         self.Direction.append(random.random())
         self.Direction.append(self.scale)
         self.Direction.append(random.random())
         
-        # Normalize direction vector
+        #Normalize direction vector
         m = math.sqrt(self.Direction[0]*self.Direction[0] + self.Direction[2]*self.Direction[2])
         self.Direction[0] /= m
         self.Direction[2] /= m
@@ -75,7 +75,6 @@ class Car:
                 self.Position[2] += self.Direction[2]
 
     def drawWheels(self):
-    # Draw four wheels - raised higher (-0.3 instead of -0.5)
         wheel_positions = [
             [-1.0, -0.3, 0.7],   # Front left
             [1.0, -0.3, 0.7],    # Front right
@@ -83,20 +82,19 @@ class Car:
             [1.0, -0.3, -0.7]    # Back right
         ]
         
-        glColor3f(0.4, 0.4, 0.4)  # Grey color for wheels
+        glColor3f(0.4, 0.4, 0.4)  #Color gris
         for wheel_pos in wheel_positions:
             glPushMatrix()
             glTranslatef(wheel_pos[0], wheel_pos[1], wheel_pos[2])
-            
-            # Draw wheel as a solid sphere
+        
             # Parameters: radius, slices, stacks
             glutSolidSphere(0.3, 20, 20)
             
             glPopMatrix()
 
     def drawCube(self):
-        # Draw bottom face (black)
-        glColor3f(0.0, 0.0, 0.0)  # Black
+        # bottom face (black)
+        glColor3f(0.0, 0.0, 0.0)
         glBegin(GL_QUADS)
         glVertex3fv(self.body_points[0])
         glVertex3fv(self.body_points[1])
@@ -104,8 +102,8 @@ class Car:
         glVertex3fv(self.body_points[3])
         glEnd()
         
-        # Draw back face
-        glColor3f(1.0, 1.0, 1.0)  # White
+        # Front face
+        glColor3f(0.8, 0.6, 0.8)  # Morado
         glBegin(GL_QUADS)
         glVertex3fv(self.body_points[2])
         glVertex3fv(self.body_points[3])
@@ -113,7 +111,7 @@ class Car:
         glVertex3fv(self.body_points[6])
         glEnd()
         
-        # Draw left side face
+        #left side face
         glBegin(GL_QUADS)
         glVertex3fv(self.body_points[3])
         glVertex3fv(self.body_points[0])
@@ -121,7 +119,7 @@ class Car:
         glVertex3fv(self.body_points[7])
         glEnd()
         
-        # Draw right side face
+        #right side face
         glBegin(GL_QUADS)
         glVertex3fv(self.body_points[1])
         glVertex3fv(self.body_points[2])

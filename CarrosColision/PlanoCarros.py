@@ -53,27 +53,74 @@ ncars = 10
 def Axis():
     glShadeModel(GL_FLAT)
     glLineWidth(3.0)
-    #X axis in red
+    #X axis en rojo
     glColor3f(1.0,0.0,0.0)
     glBegin(GL_LINES)
     glVertex3f(X_MIN,0.0,0.0)
     glVertex3f(X_MAX,0.0,0.0)
     glEnd()
-    #Y axis in green
+    #Y axis en verde
     glColor3f(0.0,1.0,0.0)
     glBegin(GL_LINES)
     glVertex3f(0.0,Y_MIN,0.0)
     glVertex3f(0.0,Y_MAX,0.0)
     glEnd()
-    #Z axis in blue
+    #Z axis en azul
     glColor3f(0.0,0.0,1.0)
     glBegin(GL_LINES)
     glVertex3f(0.0,0.0,Z_MIN)
     glVertex3f(0.0,0.0,Z_MAX)
     glEnd()
     glLineWidth(1.0)
+    
+def load_texture(image_path):
+    texture_surface = pygame.image.load(image_path)
+    texture_data = pygame.image.tostring(texture_surface, "RGB", 1)
+    width, height = texture_surface.get_size()
 
+    texture_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, texture_id)
+
+    #Seteamos los parametros de la textura
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+
+    # Seteamos esto para que la textura se aplique con el color original
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE)
+
+    # Upload the texture to OpenGL
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_data)
+
+    return texture_id
+
+def display():
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    Axis()
+
+    #Permitimos el uso de texturas
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, ground_texture)
+
+    #Dibujamos el plano gris
+    glBegin(GL_QUADS)
+    glTexCoord2f(0, 0); glVertex3d(-DimBoard, 0, -DimBoard)
+    glTexCoord2f(1, 0); glVertex3d(DimBoard, 0, -DimBoard)
+    glTexCoord2f(1, 1); glVertex3d(DimBoard, 0, DimBoard)
+    glTexCoord2f(0, 1); glVertex3d(-DimBoard, 0, DimBoard)
+    glEnd()
+
+    glDisable(GL_TEXTURE_2D)
+
+    #dibujamos carros y los actualizamos
+    for car in cars:
+        car.draw()
+        car.update()
+
+#Cargamos textura
 def Init():
+    global ground_texture
     screen = pygame.display.set_mode(
         (screen_width, screen_height), DOUBLEBUF | OPENGL)
     pygame.display.set_caption("OpenGL: Cars")
@@ -88,31 +135,20 @@ def Init():
     glClearColor(0,0,0,0)
     glEnable(GL_DEPTH_TEST)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-    
-    # Initialize cars with random positions and velocities
+
+    #Cargamos textura
+    try:
+        ground_texture = load_texture("Evidencia1/Assets/asphalt-texture.png")
+    except pygame.error as e:
+        print(f"Failed to load texture: {e}")
+        pygame.quit()
+        sys.exit()
+
+    #Iniciamos carros
     for i in range(ncars):
-        # Parameters: dimension, velocity, scale
         cars.append(Car(DimBoard, 1.0, 5.0))
-        
-    # Pass the array of cars to each car object for collision detection
     for car in cars:
         car.getCars(cars)
-
-def display():
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    Axis()
-    # Draw the grey ground plane
-    glColor3f(0.3, 0.3, 0.3)
-    glBegin(GL_QUADS)
-    glVertex3d(-DimBoard, 0, -DimBoard)
-    glVertex3d(-DimBoard, 0, DimBoard)
-    glVertex3d(DimBoard, 0, DimBoard)
-    glVertex3d(DimBoard, 0, -DimBoard)
-    glEnd()
-    # Draw and update cars
-    for car in cars:
-        car.draw()
-        car.update()
     
 done = False
 Init()
