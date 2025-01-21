@@ -1,6 +1,17 @@
 #Autor: Ivan Olmos Pineda
 #Curso: Multiagentes - Graficas Computacionales
 
+
+import math
+import agentpy as ap
+import numpy as np
+# Visualization
+import seaborn as sns
+import pandas as pd
+import matplotlib.pyplot as plt
+import IPython
+from IPython.display import display, HTML
+
 import pygame
 from pygame.locals import *
 
@@ -17,6 +28,12 @@ from Carro import Car
 import numpy as np
 import math
 import random
+
+from nbconvert import PythonExporter
+import nbformat
+import sys
+from pathlib import Path
+
 
 screen_width = 500
 screen_height = 500
@@ -49,6 +66,72 @@ pygame.init()
 
 cars = []
 ncars = 10
+
+
+rounds = None
+initial_setup = None
+
+
+def execute_notebook_code(notebook_path):
+    """
+    Import and execute code from a Jupyter notebook while handling imports and context properly.
+    
+    Args:
+        notebook_path (str): Path to the .ipynb file
+    """
+    # Convert path to absolute path
+    notebook_path = Path(notebook_path).resolve()
+    
+    # Add notebook's directory to Python path to handle relative imports
+    notebook_dir = str(notebook_path.parent)
+    if notebook_dir not in sys.path:
+        sys.path.append(notebook_dir)
+    
+    # Read and convert notebook
+    with open(notebook_path, 'r', encoding='utf-8') as f:
+        notebook_content = nbformat.read(f, as_version=4)
+    
+    # Convert to Python code
+    exporter = PythonExporter()
+    python_code, _ = exporter.from_notebook_node(notebook_content)
+    
+    # Create a new module namespace
+    module_name = notebook_path.stem
+    module = type(sys)(module_name)
+    module.__file__ = str(notebook_path)
+    
+    # Execute in the module namespace
+    exec(python_code, module.__dict__)
+    
+    # Add module to sys.modules
+    sys.modules[module_name] = module
+    
+    return module
+
+def simulate_game():
+    # Import the notebook as a module
+    simulation_module = execute_notebook_code('../agentpy/mainSimulation.ipynb')
+    
+    # Now you can access classes and functions defined in the notebook
+    BoxWarehouseModel = simulation_module.BoxWarehouseModel
+    
+    parameters = {
+        'steps': 100,
+        'n': 20,
+        'm': 20,
+        'total_boxes': 250,
+    }
+    
+    model = BoxWarehouseModel(parameters)
+    results = model.run()
+    rounds = model.rounds
+    
+    for round in rounds:
+        print("New Test Round")
+        for move in round:
+            print(move)
+    
+    
 
 def Axis():
     glShadeModel(GL_FLAT)
@@ -137,13 +220,15 @@ def Init():
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
     #Cargamos textura
+    
     try:
-        ground_texture = load_texture("Evidencia1/Assets/asphalt-texture.png")
+        ground_texture = load_texture("../Assets/asphalt-texture.png")
     except pygame.error as e:
         print(f"Failed to load texture: {e}")
         pygame.quit()
         sys.exit()
-
+    
+    simulate_game()
     #Iniciamos carros
     for i in range(ncars):
         cars.append(Car(DimBoard, 1.0, 5.0))
