@@ -131,7 +131,7 @@ def simulate_game():
         for move in round:
             print(move)
     
-    
+    print(model.initial_position)
 
 def Axis():
     glShadeModel(GL_FLAT)
