@@ -9,8 +9,6 @@ Y_MAX = 500
 Z_MIN = -500
 Z_MAX = 500
 
-ANGLE_STEP = 5
-
 # Ventana de pygame
 screen_width = 500
 screen_height = 500
@@ -19,6 +17,11 @@ screen_height = 500
 DimBoard = 200
 COLUMNS = 20
 ROWS = 20
+
+# Altura base de los objetos
+# Y = 2.0 para que esté ligeramente elevado sobre el plano
+BASE_Y = 2.0
+
 
 # File paths
 NB_PATH = "../agentpy/mainSimulation.ipynb"

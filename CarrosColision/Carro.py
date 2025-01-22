@@ -48,6 +48,7 @@ class Car:
         self.Direction.append(self.scale)
         self.Direction.append(random.random())
         self.map_coords = map_coords
+        self.basura = None
 
         # Normalize direction vector
         m = math.sqrt(

@@ -29,6 +29,7 @@ from Carro import Car
 from constants import (
     ANIMATION_SAVE_PATH,
     ASPHALT_ASSET,
+    BASE_Y,
     COLUMNS,
     NB_PATH,
     ROWS,
@@ -199,13 +200,14 @@ def initialize_basuras(initial_position):
     for box in initial_position.box_positions:
         position = [
             box[1],
-            2.0,
+            BASE_Y,
             box[0],
-        ]  # Y = 2.0 para que esté ligeramente elevado sobre el plano
+        ]
 
         try:
             basura = Basura(position, RUBRIK_ASSET, map_coords)
             basuras.append(basura)
+            Basura.place_box(basura, box[0], box[1])
         except Exception as e:
             print(f"Error al crear objeto basura: {e}")
 
@@ -267,27 +269,28 @@ def initialize_cars(DimBoard, initial_position):
 def update_movements(round_index, cars, memo):
     """Actualiza los movimientos de los carros en cada ronda de la simulación"""
 
-    if are_movements_done(cars):
+    if are_movements_done(cars) and round_index not in memo:
+        memo[round_index] = True
         if round_index < len(rounds):
             round = rounds[round_index]
             for move in round:
                 for car in cars:
                     if car.id == move.agent_id:
-                        key = tuple([round_index, car.id])
-
-                        if move.action == "pick_up" and key not in memo:
-                            memo[key] = (
-                                True  # mark as it isn't picked again when using MANUAL_IT)
-                            )
+                        if move.action == "pick_up":
                             pick_cell = pick_decision(
                                 [move.cell[0], move.cell[1]], move.looking_direction
                             )
 
                             pick_cell = [int(c) for c in pick_cell]
-                            # print("pick_cell:", pick_cell)
-                            box = Basura.boxes_positions[tuple(pick_cell)].pop()
-                            box.target_reference = car
+                            Basura.pick_box(car, pick_cell[0], pick_cell[1])
+
                             # print(f"Agent {car.id} picked up box at {pick_cell}")
+                        if move.action == "stack":
+                            place_cell = pick_decision(
+                                [move.cell[0], move.cell[1]], move.looking_direction
+                            )
+                            Basura.place_box(car.basura, place_cell[0], place_cell[1])
+                            car.basura = None
 
                         car.move(move.cell[1], move.cell[0])
                         car.rotatedir(move.looking_direction)
@@ -396,13 +399,6 @@ def Init(camera):
     # Iniciamos basuras
     basuras = initialize_basuras(initial_position)
 
-    for basura in basuras:
-        key = (int(basura.Position[2]), int(basura.Position[0]))
-        # print("key:", key)
-        if key not in Basura.boxes_positions:
-            Basura.boxes_positions[key] = []
-        Basura.boxes_positions[key].append(basura)
-
     # for car in cars:
     #     print(car.Position)
 
@@ -420,6 +416,13 @@ def debug(cars, boxes):
     for box in boxes:
         print(box.Position)
 
+    print("********** Box Positions (Basura) **********")
+
+    print(Basura.boxes_positions)
+    for key, value in Basura.boxes_positions.items():
+        for box in value:
+            print(box.target_reference.Position)
+
     print("\n\n")
 
 
@@ -432,8 +435,6 @@ if __name__ == "__main__":
     camera = Camera()
     memo = {}
     cars, basuras, rounds, ground_texture, screen = Init(camera)
-
-    print(Basura.boxes_positions)
 
     while not done:
         for event in pygame.event.get():

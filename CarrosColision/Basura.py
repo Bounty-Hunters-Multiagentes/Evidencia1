@@ -12,9 +12,19 @@ from OpenGL.GLUT import *
 from pygame.locals import *
 
 
+class BasuraPosition:
+    Position = []
+
+    def __init__(self, position):
+        # Flip positions for visual representation
+        self.Position = position
+
+
 # Clase para el cubo Basura
 class Basura:
     boxes_positions = {}
+    base_height = 5
+    box_height = 5
 
     def __init__(self, position, texture_file, map_coords):
         # Vertices del cubo
@@ -172,3 +182,26 @@ class Basura:
 
         glDisable(GL_TEXTURE_2D)
         glPopMatrix()
+
+    @staticmethod
+    def place_box(basura, x, z):
+        # Get existing items
+        items = Basura.boxes_positions.get((x, z), [])
+
+        # Initialize if empty
+        if len(items) == 0:
+            Basura.boxes_positions[(x, z)] = []
+
+        # Add item
+        Basura.boxes_positions[(x, z)].append(basura)
+
+        # Generate and set target objective
+        Position = [z, Basura.box_height * len(items) + Basura.base_height, x]
+        target = BasuraPosition(Position)
+        basura.target_reference = target
+
+    @staticmethod
+    def pick_box(car, x, z):
+        basura = Basura.boxes_positions[(x, z)].pop()
+        basura.target_reference = car
+        car.basura = basura
