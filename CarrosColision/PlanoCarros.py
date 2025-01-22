@@ -9,6 +9,7 @@ import pygame
 
 # Visualization
 from IPython.display import display
+from objects import Camera
 
 # Cargamos las bibliotecas de OpenGL
 from OpenGL.GL import *
@@ -23,46 +24,21 @@ from pathlib import Path
 import nbformat
 from Basura import Basura
 from Carro import Car
+from constants import (
+    ASPHALT_ASSET,
+    NB_PATH,
+    RUBRIK_ASSET,
+    X_MAX,
+    X_MIN,
+    Y_MAX,
+    Y_MIN,
+    Z_MAX,
+    Z_MIN,
+    DimBoard,
+    screen_height,
+    screen_width,
+)
 from nbconvert import PythonExporter
-
-screen_width = 500
-screen_height = 500
-# vc para el obser.
-FOVY = 60.0
-ZNEAR = 0.01
-ZFAR = 900.0
-# Variables para definir la posicion del observador
-# gluLookAt(EYE_X,EYE_Y,EYE_Z,CENTER_X,CENTER_Y,CENTER_Z,UP_X,UP_Y,UP_Z)
-EYE_X = 300.0
-EYE_Y = 200.0
-EYE_Z = 300.0
-CENTER_X = 0
-CENTER_Y = 0
-CENTER_Z = 0
-UP_X = 0
-UP_Y = 1
-UP_Z = 0
-# Variables para dibujar los ejes del sistema
-X_MIN = -500
-X_MAX = 500
-Y_MIN = -500
-Y_MAX = 500
-Z_MIN = -500
-Z_MAX = 500
-# Dimension del plano
-DimBoard = 200
-
-pygame.init()
-
-cars = []
-ncars = 5
-
-basuras = []
-nbasuras = 5
-
-
-rounds = None
-initial_position = None
 
 
 def execute_notebook_code(notebook_path):
@@ -103,10 +79,8 @@ def execute_notebook_code(notebook_path):
 
 
 def simulate_game():
-    global initial_position
-    global rounds
     # Import the notebook as a module
-    simulation_module = execute_notebook_code("../agentpy/mainSimulation.ipynb")
+    simulation_module = execute_notebook_code(NB_PATH)
 
     # Now you can access classes and functions defined in the notebook
     BoxWarehouseModel = simulation_module.BoxWarehouseModel
@@ -128,6 +102,8 @@ def simulate_game():
     #         print(move)
     initial_position = model.initial_position
     # print(model.initial_position)
+
+    return model
 
 
 def Axis():
@@ -187,14 +163,15 @@ def load_texture(image_path):
     return texture_id
 
 
-def init_basura_objects(initial_position):
+def initialize_basuras(initial_position):
     """Inicializa los objetos basura en posiciones aleatorias"""
     rows, columns = initial_position.board_dimensions
     scale_factor_x = 400 / columns  # Scale factor for x-axis (columns)
     scale_factor_y = 400 / rows  # Scale factor for y-axis (rows)
 
+    basuras = []
+
     for box in initial_position.box_positions:
-        print(box)
         scaled_x = (box[1] - columns / 2) * scale_factor_x
         scaled_z = (box[0] - rows / 2) * scale_factor_y
         position = [
@@ -204,10 +181,12 @@ def init_basura_objects(initial_position):
         ]  # Y = 2.0 para que esté ligeramente elevado sobre el plano
 
         try:
-            basura = Basura(position, "../Assets/rubik.png")
+            basura = Basura(position, RUBRIK_ASSET)
             basuras.append(basura)
         except Exception as e:
             print(f"Error al crear objeto basura: {e}")
+
+    return basuras
 
 
 def update_movements(cars):
@@ -229,7 +208,7 @@ def update_movements(cars):
             # print("SIMULATION FINISHED")
 
 
-def display():
+def display(cars, basuras, ground_texture):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     Axis()
 
@@ -251,9 +230,6 @@ def display():
 
     glDisable(GL_TEXTURE_2D)
 
-    if are_movements_done(cars):
-        # Si ya no hay movimientos, obtenemos el siguiente movimiento de la simulación
-        pass
     # Dibujamos carros y los actualizamos
     for car in cars:
         car.draw()
@@ -267,13 +243,13 @@ def display():
     update_movements(cars)
 
 
-def initialize_cars(DimBoard, ncars):
+def initialize_cars(DimBoard, initial_position):
     """
     Initialize the cars and place them based on the initial positions of agents.
 
     Args:
         DimBoard: The OpenGL board dimension (e.g., 200x200).
-        ncars: Number of cars to initialize.
+        initial_position: the state of the initial positions in the simulation.
 
     Returns:
         List of initialized Car objects.
@@ -285,21 +261,20 @@ def initialize_cars(DimBoard, ncars):
 
     cars = []
 
-    for i in range(ncars):
-        if i < len(initial_position.agents):
-            agent_id, initial_pos = initial_position.agents[i]
+    for i in range(len(initial_position.agents)):
+        agent_id, initial_pos = initial_position.agents[i]
 
-            # Center the agent grid around (0, 0) of the OpenGL board
-            # Map the agent position from grid [0,0] to [columns-1, rows-1]
-            # to the OpenGL range [-400/2, 400/2]
+        # Center the agent grid around (0, 0) of the OpenGL board
+        # Map the agent position from grid [0,0] to [columns-1, rows-1]
+        # to the OpenGL range [-400/2, 400/2]
 
-            # Compute scaled x and z positions for OpenGL coordinates
-            scaled_x = (initial_pos[1] - columns / 2) * scale_factor_x
-            scaled_z = (initial_pos[0] - rows / 2) * scale_factor_y
+        # Compute scaled x and z positions for OpenGL coordinates
+        scaled_x = (initial_pos[1] - columns / 2) * scale_factor_x
+        scaled_z = (initial_pos[0] - rows / 2) * scale_factor_y
 
-            car = Car(DimBoard, 1.0, 5.0, id=agent_id)  # Initialize car
-            # Update car position
-            car.Position = [scaled_x + 10, car.scale, scaled_z + 10]
+        car = Car(DimBoard, 1.0, 5.0, id=agent_id)  # Initialize car
+        # Update car position
+        car.Position = [scaled_x + 10, car.scale, scaled_z + 10]
 
         cars.append(car)
 
@@ -318,55 +293,77 @@ def are_movements_done(cars):
     return True
 
 
-# Cargamos textura
-def Init():
-    global ground_texture
-    screen = pygame.display.set_mode((screen_width, screen_height), DOUBLEBUF | OPENGL)
-    pygame.display.set_caption("OpenGL: Cars")
-
+def load_camera(camera: Camera):
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(FOVY, screen_width / screen_height, ZNEAR, ZFAR)
+    gluPerspective(camera.FOVY, screen_width / screen_height, camera.ZNEAR, camera.ZFAR)
 
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
-    gluLookAt(EYE_X, EYE_Y, EYE_Z, CENTER_X, CENTER_Y, CENTER_Z, UP_X, UP_Y, UP_Z)
+    gluLookAt(
+        camera.EYE_X,
+        camera.EYE_Y,
+        camera.EYE_Z,
+        camera.CENTER_X,
+        camera.CENTER_Y,
+        camera.CENTER_Z,
+        camera.UP_X,
+        camera.UP_Y,
+        camera.UP_Z,
+    )
+
+
+# Cargamos textura
+def Init(camera):
+    pygame.init()
+    screen = pygame.display.set_mode((screen_width, screen_height), DOUBLEBUF | OPENGL)
+    pygame.display.set_caption("OpenGL: Cars")
+
+    load_camera(camera)
+
     glClearColor(0, 0, 0, 0)
     glEnable(GL_DEPTH_TEST)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
     # Cargamos textura
     try:
-        ground_texture = load_texture("../Assets/asphalt-texture.png")
+        ground_texture = load_texture(ASPHALT_ASSET)
     except pygame.error as e:
         print(f"Failed to load texture: {e}")
         pygame.quit()
         sys.exit()
 
-    simulate_game()
+    model = simulate_game()
 
-    global cars
-    global initial_position
-
-    init_basura_objects(initial_position)
+    initial_position = model.initial_position
+    rounds = model.rounds
 
     # Iniciamos carros
-    cars = initialize_cars(DimBoard, ncars)
+    cars = initialize_cars(DimBoard, initial_position)
+
+    # Iniciamos basuras
+    basuras = initialize_basuras(initial_position)
 
     for car in cars:
         print(car.Position)
+
+    return cars, basuras, rounds, ground_texture
 
 
 if __name__ == "__main__":
     done = False
     round_index = 0
-    Init()
+    cars = []
+    basuras = []
+    camera = Camera()
+    cars, basuras, rounds, ground_texture = Init(camera)
+
     while not done:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
 
-        display()
+        display(cars, basuras, ground_texture)
 
         pygame.display.flip()
         pygame.time.wait(10)
