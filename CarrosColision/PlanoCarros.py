@@ -216,16 +216,16 @@ def pick_decision(robot_position, direction):
     # print("pd:", direction)
     # print("robot_position:", robot_position)
     if direction == "up":
-        robot_position[1] -= 1
-        return robot_position
-    elif direction == "down":
-        robot_position[1] += 1
-        return robot_position
-    elif direction == "left":
         robot_position[0] -= 1
         return robot_position
-    elif direction == "right":
+    elif direction == "down":
         robot_position[0] += 1
+        return robot_position
+    elif direction == "left":
+        robot_position[1] -= 1
+        return robot_position
+    elif direction == "right":
+        robot_position[1] += 1
         return robot_position
 
 
@@ -264,7 +264,7 @@ def initialize_cars(DimBoard, initial_position):
     return cars
 
 
-def update_movements(round_index, cars):
+def update_movements(round_index, cars, memo):
     """Actualiza los movimientos de los carros en cada ronda de la simulación"""
 
     if are_movements_done(cars):
@@ -273,13 +273,21 @@ def update_movements(round_index, cars):
             for move in round:
                 for car in cars:
                     if car.id == move.agent_id:
-                        # if move.action == "pick_up":
-                        #     pick_cell = pick_decision(
-                        #         [move.cell[1], move.cell[0]], move.looking_direction
-                        #     )
-                        #     pick_cell = [int(c) for c in pick_cell]
-                        #     box = Basura.boxes_positions[tuple(pick_cell)].pop()
-                        #     box.target_reference = car
+                        key = tuple([round_index, car.id])
+
+                        if move.action == "pick_up" and key not in memo:
+                            memo[key] = (
+                                True  # mark as it isn't picked again when using MANUAL_IT)
+                            )
+                            pick_cell = pick_decision(
+                                [move.cell[0], move.cell[1]], move.looking_direction
+                            )
+
+                            pick_cell = [int(c) for c in pick_cell]
+                            # print("pick_cell:", pick_cell)
+                            box = Basura.boxes_positions[tuple(pick_cell)].pop()
+                            box.target_reference = car
+                            # print(f"Agent {car.id} picked up box at {pick_cell}")
 
                         car.move(move.cell[1], move.cell[0])
                         car.rotatedir(move.looking_direction)
@@ -293,7 +301,7 @@ def update_movements(round_index, cars):
     return round_index
 
 
-def display(round_index, cars, basuras, ground_texture):
+def display(round_index, cars, basuras, ground_texture, memo):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     Axis()
 
@@ -326,7 +334,7 @@ def display(round_index, cars, basuras, ground_texture):
     for basura in basuras:
         basura.update()
 
-    return update_movements(round_index, cars)
+    return update_movements(round_index, cars, memo)
 
 
 def are_movements_done(cars):
@@ -389,7 +397,8 @@ def Init(camera):
     basuras = initialize_basuras(initial_position)
 
     for basura in basuras:
-        key = (int(basura.Position[0]), int(basura.Position[1]))
+        key = (int(basura.Position[2]), int(basura.Position[0]))
+        # print("key:", key)
         if key not in Basura.boxes_positions:
             Basura.boxes_positions[key] = []
         Basura.boxes_positions[key].append(basura)
@@ -421,6 +430,7 @@ if __name__ == "__main__":
     cars = []
     basuras = []
     camera = Camera()
+    memo = {}
     cars, basuras, rounds, ground_texture, screen = Init(camera)
 
     print(Basura.boxes_positions)
@@ -444,9 +454,9 @@ if __name__ == "__main__":
         round_index = min(max(round_index, 0), len(rounds) - 1)
 
         if MANUAL_IT:
-            display(round_index, cars, basuras, ground_texture)
+            display(round_index, cars, basuras, ground_texture, memo)
         else:
-            round_index = display(round_index, cars, basuras, ground_texture)
+            round_index = display(round_index, cars, basuras, ground_texture, memo)
 
         pygame.display.set_caption(f"OpenGL: Cars (t = {round_index+1}/{len(rounds)})")
 
