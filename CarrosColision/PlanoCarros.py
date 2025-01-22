@@ -198,9 +198,9 @@ def initialize_basuras(initial_position):
 
     for box in initial_position.box_positions:
         position = [
-            box[0],
-            2.0,
             box[1],
+            2.0,
+            box[0],
         ]  # Y = 2.0 para que esté ligeramente elevado sobre el plano
 
         try:
@@ -251,7 +251,7 @@ def initialize_cars(DimBoard, initial_position):
         )  # Initialize car
 
         # Update car position
-        car.set_position([initial_pos[0], car.scale, initial_pos[1]])
+        car.set_position([initial_pos[1], car.scale, initial_pos[0]])
         car.rotatedir("up")
 
         cars.append(car)
@@ -273,18 +273,19 @@ def update_movements(round_index, cars):
             for move in round:
                 for car in cars:
                     if car.id == move.agent_id:
-                        if move.action == "pick_up":
-                            pick_cell = pick_decision(
-                                [move.cell[0], move.cell[1]], move.looking_direction
-                            )
-                            pick_cell = [int(c) for c in pick_cell]
-                            box = Basura.boxes_positions[tuple(pick_cell)].pop()
-                            box.target_reference = car
+                        # if move.action == "pick_up":
+                        #     pick_cell = pick_decision(
+                        #         [move.cell[1], move.cell[0]], move.looking_direction
+                        #     )
+                        #     pick_cell = [int(c) for c in pick_cell]
+                        #     box = Basura.boxes_positions[tuple(pick_cell)].pop()
+                        #     box.target_reference = car
 
-                        car.move(move.cell[0], move.cell[1])
+                        car.move(move.cell[1], move.cell[0])
                         car.rotatedir(move.looking_direction)
                         break
             round_index += 1
+
         else:
             pass
             # print("SIMULATION FINISHED")
@@ -321,7 +322,7 @@ def display(round_index, cars, basuras, ground_texture):
         car.update_new()
 
     # Dibujamos objetos basura
-    basuras[0].target_reference = cars[0]
+    # basuras[0].target_reference = cars[0]
     for basura in basuras:
         basura.update()
 
@@ -357,6 +358,9 @@ def load_camera(camera: Camera):
 
 # Cargamos textura
 def Init(camera):
+    print("Running agentpy simulation...")
+    model = simulate_game()
+
     pygame.init()
     screen = pygame.display.set_mode((screen_width, screen_height), DOUBLEBUF | OPENGL)
     pygame.display.set_caption("OpenGL: Cars")
@@ -374,8 +378,6 @@ def Init(camera):
         print(f"Failed to load texture: {e}")
         pygame.quit()
         sys.exit()
-
-    model = simulate_game()
 
     initial_position = model.initial_position
     rounds = model.rounds
@@ -398,7 +400,22 @@ def Init(camera):
     return cars, basuras, rounds, ground_texture, screen
 
 
+def debug(cars, boxes):
+    print("********** DEBUG **********")
+    print("********** car Positions **********")
+    for car in cars:
+        print(car.Position)
+
+    print("********** Box Positions **********")
+
+    for box in boxes:
+        print(box.Position)
+
+    print("\n\n")
+
+
 if __name__ == "__main__":
+    MANUAL_IT = True
     done = False
     round_index = 0
     cars = []
@@ -407,8 +424,6 @@ if __name__ == "__main__":
     cars, basuras, rounds, ground_texture, screen = Init(camera)
 
     print(Basura.boxes_positions)
-
-    font = pygame.font.Font("freesansbold.ttf", 32)
 
     while not done:
         for event in pygame.event.get():
@@ -419,12 +434,23 @@ if __name__ == "__main__":
                 if event.key == pygame.K_t:
                     toggle_camera_view(camera)
                     load_camera(camera)
+                if event.key == pygame.K_RIGHT:
+                    round_index += 1
+                if event.key == pygame.K_LEFT:
+                    round_index -= 1
+                if event.key == pygame.K_d:
+                    debug(cars, basuras)
 
-        round_index = display(round_index, cars, basuras, ground_texture)
+        round_index = min(max(round_index, 0), len(rounds) - 1)
+
+        if MANUAL_IT:
+            display(round_index, cars, basuras, ground_texture)
+        else:
+            round_index = display(round_index, cars, basuras, ground_texture)
+
+        pygame.display.set_caption(f"OpenGL: Cars (t = {round_index+1}/{len(rounds)})")
 
         pygame.display.flip()
         pygame.time.wait(10)
-        text = font.render(f"Round {round_index + 1}", True, (255, 0, 0))
-        screen.blit(text, (0, 0))
 
     pygame.quit()
