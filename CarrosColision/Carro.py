@@ -14,7 +14,7 @@ import random
 import math
 
 class Car:
-    def __init__(self, dim, vel, Scale):
+    def __init__(self, dim, vel, Scale, id):
         # Car body points (cube without top)
         self.body_points = np.array([
             # Bottom vertices
@@ -26,6 +26,7 @@ class Car:
         self.scale = Scale + 2
         self.radio = math.sqrt(self.scale*self.scale + self.scale*self.scale)
         self.DimBoard = dim
+        self.id = id
         
         #Initialize random position
         self.Position = []

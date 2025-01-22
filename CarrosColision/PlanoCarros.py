@@ -202,7 +202,27 @@ def init_basura_objects(initial_position):
             basuras.append(basura)
         except Exception as e:
             print(f"Error al crear objeto basura: {e}")
+
+
+
+def update_movements(cars):
+    """Actualiza los movimientos de los carros en cada ronda de la simulación"""
+    global round_index
         
+    if are_movements_done(cars):
+        if round_index < len(rounds):
+            round = rounds[round_index]
+            for move in round:
+                for car in cars:
+                    if car.id == move.agent_id:
+                        
+                        car.move(move.cell[1], move.cell[0])
+                        car.rotatedir(move.looking_direction)
+                        break
+            round_index += 1
+        else:
+            print("SIMULATION FINISHED")
+
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -228,11 +248,15 @@ def display():
     # Dibujamos carros y los actualizamos
     for car in cars:
         car.draw()
-        car.update()
+        # car.update()
+        car.update_new()
+
     
     # Dibujamos objetos basura
     for basura in basuras:
         basura.draw()
+        
+    update_movements(cars)
 
 def initialize_cars(DimBoard, ncars):
     """
@@ -253,7 +277,6 @@ def initialize_cars(DimBoard, ncars):
     cars = []
 
     for i in range(ncars):
-        car = Car(DimBoard, 1.0, 5.0)  # Initialize car
         if i < len(initial_position.agents):
             agent_id, initial_pos = initial_position.agents[i]
 
@@ -265,6 +288,7 @@ def initialize_cars(DimBoard, ncars):
             scaled_x = (initial_pos[1] - columns / 2) * scale_factor_x
             scaled_z = (initial_pos[0] - rows / 2) * scale_factor_y
 
+            car = Car(DimBoard, 1.0, 5.0, id=agent_id)  # Initialize car
             # Update car position
             car.Position = [scaled_x, car.scale, scaled_z]
 
@@ -336,6 +360,7 @@ def Init():
     """
     
 done = False
+round_index = 0
 Init()
 while not done:
     for event in pygame.event.get():
