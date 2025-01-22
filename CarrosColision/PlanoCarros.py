@@ -125,7 +125,7 @@ def simulate_game():
         'steps': 100,
         'n': 20,
         'm': 20,
-        'total_boxes': 250,
+        'total_boxes': 50,
     }
     
     model = BoxWarehouseModel(parameters)
@@ -202,6 +202,7 @@ def init_basura_objects(initial_position):
             basuras.append(basura)
         except Exception as e:
             print(f"Error al crear objeto basura: {e}")
+        
 
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -227,7 +228,7 @@ def display():
     # Dibujamos carros y los actualizamos
     for car in cars:
         car.draw()
-        car.update_new()
+        car.update()
     
     # Dibujamos objetos basura
     for basura in basuras:
@@ -272,7 +273,8 @@ def initialize_cars(DimBoard, ncars):
     # Link cars for collision detection
     for car in cars:
         car.getCars(cars)
-
+        car.getBoxes(basuras)
+        
     return cars
 
 

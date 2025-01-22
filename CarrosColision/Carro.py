@@ -50,6 +50,7 @@ class Car:
         
         self.collision = False
         self.Cars = []
+        self.Boxes = []
         glutInit()
         
         
@@ -64,6 +65,9 @@ class Car:
 
     def getCars(self, NCars):
         self.Cars = NCars
+    
+    def getBoxes(self, NBoxes): 
+        self.Boxes = NBoxes
         
     def move(self, target_x, target_z):
         self.target_position = [target_x * self.scale, self.Position[1], target_z * self.scale]
@@ -213,5 +217,14 @@ class Car:
                 d_z = self.Position[2] - obj.Position[2]
                 d_c = math.sqrt(d_x * d_x + d_z * d_z)
                 if d_c - (self.radio + obj.radio) < 0.0:
+                    self.Direction[0] *= -1.0
+                    self.Direction[2] *= -1.0
+        
+        for obj in self.Boxes:
+            if self != obj:
+                d_x = self.Position[0] - obj.Position[0]
+                d_z = self.Position[2] - obj.Position[2]
+                d_c = math.sqrt(d_x * d_x + d_z * d_z)
+                if d_c - (self.radio + 5) < 0.0:
                     self.Direction[0] *= -1.0
                     self.Direction[2] *= -1.0
