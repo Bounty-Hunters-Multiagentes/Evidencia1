@@ -167,6 +167,9 @@ def load_texture(image_path):
 
 
 def map_coords(x, z):
+    # Center the agent grid around (0, 0) of the OpenGL board
+    # Map the agent position from grid [0,0] to [columns-1, rows-1]
+    # to the OpenGL range [-400/2, 400/2]
     board_size = DimBoard * 2
     scale_factor_x = board_size / COLUMNS  # Scale factor for x-axis (columns)
     scale_factor_z = board_size / ROWS  # Scale factor for y-axis (rows)
@@ -179,23 +182,17 @@ def map_coords(x, z):
 
 def initialize_basuras(initial_position):
     """Inicializa los objetos basura en posiciones aleatorias"""
-    rows, columns = initial_position.board_dimensions
-    scale_factor_x = 400 / columns  # Scale factor for x-axis (columns)
-    scale_factor_z = 400 / rows  # Scale factor for y-axis (rows)
-
     basuras = []
 
     for box in initial_position.box_positions:
-        scaled_x = (box[0] - columns / 2) * scale_factor_x
-        scaled_z = (box[1] - rows / 2) * scale_factor_z
         position = [
-            scaled_x + 10,
+            box[0],
             2.0,
-            scaled_z + 10,
+            box[1],
         ]  # Y = 2.0 para que esté ligeramente elevado sobre el plano
 
         try:
-            basura = Basura(position, RUBRIK_ASSET)
+            basura = Basura(position, RUBRIK_ASSET, map_coords)
             basuras.append(basura)
         except Exception as e:
             print(f"Error al crear objeto basura: {e}")
@@ -215,26 +212,17 @@ def initialize_cars(DimBoard, initial_position):
         List of initialized Car objects.
     """
     # Extract board dimensions and scale factor
-    rows, columns = initial_position.board_dimensions
-    scale_factor_x = 400 / columns  # Scale factor for x-axis (columns)
-    scale_factor_y = 400 / rows  # Scale factor for y-axis (rows)
-
     cars = []
 
     for i in range(len(initial_position.agents)):
         agent_id, initial_pos = initial_position.agents[i]
 
-        # Center the agent grid around (0, 0) of the OpenGL board
-        # Map the agent position from grid [0,0] to [columns-1, rows-1]
-        # to the OpenGL range [-400/2, 400/2]
+        car = Car(
+            DimBoard, 1.0, 5.0, id=agent_id, map_coords=map_coords
+        )  # Initialize car
 
-        # Compute scaled x and z positions for OpenGL coordinates
-        scaled_x = (initial_pos[0] - columns / 2) * scale_factor_x
-        scaled_z = (initial_pos[1] - rows / 2) * scale_factor_y
-
-        car = Car(DimBoard, 1.0, 5.0, id=agent_id)  # Initialize car
         # Update car position
-        car.Position = [scaled_x + 10, car.scale, scaled_z + 10]
+        car.set_position([initial_pos[0], car.scale, initial_pos[1]])
         car.rotatedir("up")
 
         cars.append(car)
@@ -256,11 +244,7 @@ def update_movements(round_index, cars):
             for move in round:
                 for car in cars:
                     if car.id == move.agent_id:
-                        x, z = map_coords(move.cell[0], move.cell[1])
-                        # print(move.cell[0], move.cell[1])
-                        # x, z = map_coords(19, 19)
-
-                        car.move(x + 10, z + 10)
+                        car.move(move.cell[0], move.cell[1])
                         car.rotatedir(move.looking_direction)
                         break
             round_index += 1
@@ -300,8 +284,9 @@ def display(round_index, cars, basuras, ground_texture):
         car.update_new()
 
     # Dibujamos objetos basura
+    basuras[0].target_reference = cars[0]
     for basura in basuras:
-        basura.draw()
+        basura.update()
 
     return update_movements(round_index, cars)
 
@@ -364,6 +349,9 @@ def Init(camera):
     # Iniciamos basuras
     basuras = initialize_basuras(initial_position)
 
+    for basura in basuras:
+        Basura.boxes_positions[(basura.Position[0], basura.Position[1])] = basura
+
     # for car in cars:
     #     print(car.Position)
 
@@ -377,6 +365,9 @@ if __name__ == "__main__":
     basuras = []
     camera = Camera()
     cars, basuras, rounds, ground_texture, screen = Init(camera)
+
+    print(Basura.boxes_positions)
+
     font = pygame.font.Font("freesansbold.ttf", 32)
 
     while not done:

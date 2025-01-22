@@ -14,7 +14,7 @@ from pygame.locals import *
 
 
 class Car:
-    def __init__(self, dim, vel, Scale, id):
+    def __init__(self, dim, vel, Scale, id, map_coords):
         # Car body points (cube without top)
         self.body_points = np.array(
             [
@@ -47,6 +47,7 @@ class Car:
         self.Direction.append(random.random())
         self.Direction.append(self.scale)
         self.Direction.append(random.random())
+        self.map_coords = map_coords
 
         # Normalize direction vector
         m = math.sqrt(
@@ -70,7 +71,7 @@ class Car:
         self.target_rotation = None
         self.current_rotation = 0.0
         self.is_moving = False
-        self.animation_speed = 1.0  # unidades por frame
+        self.animation_speed = 0.05  # unidades por frame
         self.rotation_speed = 10.0  # grados por frame
 
     def getCars(self, NCars):
@@ -208,8 +209,13 @@ class Car:
         glEnd()
 
     def draw(self):
+        # transformar coordenadas
+        x, z = self.map_coords(self.Position[0], self.Position[2])
+        x += self.scale * 2
+        z += self.scale * 2
+
         glPushMatrix()
-        glTranslatef(self.Position[0], self.Position[1], self.Position[2])
+        glTranslatef(x, self.Position[1], z)
         glScaled(self.scale, self.scale, self.scale)
 
         # Calculate rotation angle based on direction
@@ -223,6 +229,13 @@ class Car:
         self.drawWheels()
 
         glPopMatrix()
+
+    def set_position(self, position):
+        # x, z = self.map_coords(position[0], position[2])
+        # y = position[1]
+        # x += self.scale * 2
+        # z += self.scale * 2
+        self.Position = position
 
     def CollitionDetection(self):
         for obj in self.Cars:
