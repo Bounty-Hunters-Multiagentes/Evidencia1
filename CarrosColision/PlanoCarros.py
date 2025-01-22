@@ -190,9 +190,8 @@ def initialize_basuras(initial_position):
     return basuras
 
 
-def update_movements(cars):
+def update_movements(round_index, cars):
     """Actualiza los movimientos de los carros en cada ronda de la simulación"""
-    global round_index
 
     if are_movements_done(cars):
         if round_index < len(rounds):
@@ -209,7 +208,7 @@ def update_movements(cars):
             # print("SIMULATION FINISHED")
 
 
-def display(cars, basuras, ground_texture):
+def display(round_index, cars, basuras, ground_texture):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     Axis()
 
@@ -241,7 +240,7 @@ def display(cars, basuras, ground_texture):
     for basura in basuras:
         basura.draw()
 
-    update_movements(cars)
+    update_movements(round_index, cars)
 
 
 def initialize_cars(DimBoard, initial_position):
@@ -276,6 +275,7 @@ def initialize_cars(DimBoard, initial_position):
         car = Car(DimBoard, 1.0, 5.0, id=agent_id)  # Initialize car
         # Update car position
         car.Position = [scaled_x + 10, car.scale, scaled_z + 10]
+        car.rotatedir("up")
 
         cars.append(car)
 
