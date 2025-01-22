@@ -24,6 +24,7 @@ ROWS = 20
 NB_PATH = "../agentpy/mainSimulation.ipynb"
 RUBRIK_ASSET = "../Assets/rubik.png"
 ASPHALT_ASSET = "../Assets/asphalt-texture.png"
+ANIMATION_SAVE_PATH = "../agentpy/simulation.html"
 
 
 def toggle_camera_view(camera: Camera):

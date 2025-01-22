@@ -18,6 +18,8 @@ from OpenGL.GLUT import *
 from pygame.locals import *
 
 sys.path.append("..")
+import contextlib
+import io
 import sys
 from pathlib import Path
 
@@ -25,6 +27,7 @@ import nbformat
 from Basura import Basura
 from Carro import Car
 from constants import (
+    ANIMATION_SAVE_PATH,
     ASPHALT_ASSET,
     COLUMNS,
     NB_PATH,
@@ -87,24 +90,33 @@ def simulate_game():
 
     # Now you can access classes and functions defined in the notebook
     BoxWarehouseModel = simulation_module.BoxWarehouseModel
+    show_animation_func = simulation_module.show_animation
 
     parameters = {
         "steps": 100,
         "n": COLUMNS,
         "m": ROWS,
         "total_boxes": 50,
+        "seed": 22,
     }
 
     model = BoxWarehouseModel(parameters)
-    results = model.run()
-    rounds = model.rounds
+    model.run()
 
     # for round in rounds:
     #     print("New Test Round")
     #     for move in round:
     #         print(move)
-    initial_position = model.initial_position
     # print(model.initial_position)
+
+    # ignore the stdout of these lines (output errors are expected)
+    f = io.StringIO()
+    with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
+        animation = show_animation_func(parameters)
+        animation_html = animation.to_jshtml()
+
+    with open(ANIMATION_SAVE_PATH, "w") as f:
+        f.write(animation_html)
 
     return model
 
@@ -201,11 +213,13 @@ def initialize_basuras(initial_position):
 
 
 def pick_decision(robot_position, direction):
+    # print("pd:", direction)
+    # print("robot_position:", robot_position)
     if direction == "up":
-        robot_position[1] += 1
+        robot_position[1] -= 1
         return robot_position
     elif direction == "down":
-        robot_position[1] -= 1
+        robot_position[1] += 1
         return robot_position
     elif direction == "left":
         robot_position[0] -= 1
