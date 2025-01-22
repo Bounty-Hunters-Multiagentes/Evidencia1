@@ -24,6 +24,7 @@ from OpenGL.GLUT import *
 import sys
 sys.path.append('..')
 from Carro import Car
+from Basura import Basura
 
 import numpy as np
 import math
@@ -66,6 +67,9 @@ pygame.init()
 
 cars = []
 ncars = 10
+
+basuras = []
+nbasuras = 5
 
 
 rounds = None
@@ -155,7 +159,8 @@ def Axis():
     glVertex3f(0.0,0.0,Z_MAX)
     glEnd()
     glLineWidth(1.0)
-    
+
+
 def load_texture(image_path):
     texture_surface = pygame.image.load(image_path)
     texture_data = pygame.image.tostring(texture_surface, "RGB", 1)
@@ -178,15 +183,29 @@ def load_texture(image_path):
 
     return texture_id
 
+def init_basura_objects():
+    """Inicializa los objetos basura en posiciones aleatorias"""
+    for _ in range(nbasuras):
+        # Genera posiciones aleatorias dentro del tablero
+        x = random.uniform(-DimBoard + 20, DimBoard - 20)  # Margen de 20 unidades
+        z = random.uniform(-DimBoard + 20, DimBoard - 20)
+        position = [x, 2.0, z]  # Y = 2.0 para que esté ligeramente elevado sobre el plano
+        try:
+            basura = Basura(position, "../Assets/rubik.png")
+            basuras.append(basura)
+            print(f"Objeto basura creado en posición: {position}")
+        except Exception as e:
+            print(f"Error al crear objeto basura: {e}")
+
 def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     Axis()
 
-    #Permitimos el uso de texturas
+    # Permitimos el uso de texturas
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, ground_texture)
 
-    #Dibujamos el plano gris
+    # Dibujamos el plano gris
     glBegin(GL_QUADS)
     glTexCoord2f(0, 0); glVertex3d(-DimBoard, 0, -DimBoard)
     glTexCoord2f(1, 0); glVertex3d(DimBoard, 0, -DimBoard)
@@ -196,10 +215,14 @@ def display():
 
     glDisable(GL_TEXTURE_2D)
 
-    #dibujamos carros y los actualizamos
+    # Dibujamos carros y los actualizamos
     for car in cars:
         car.draw()
         car.update()
+    
+    # Dibujamos objetos basura
+    for basura in basuras:
+        basura.draw()
 
 #Cargamos textura
 def Init():
@@ -219,8 +242,7 @@ def Init():
     glEnable(GL_DEPTH_TEST)
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
 
-    #Cargamos textura
-    
+    # Cargamos textura
     try:
         ground_texture = load_texture("../Assets/asphalt-texture.png")
     except pygame.error as e:
@@ -228,8 +250,12 @@ def Init():
         pygame.quit()
         sys.exit()
     
+    # Inicializamos objetos basura
+    init_basura_objects()
+    
     simulate_game()
-    #Iniciamos carros
+    
+    # Iniciamos carros
     for i in range(ncars):
         cars.append(Car(DimBoard, 1.0, 5.0))
     for car in cars:
