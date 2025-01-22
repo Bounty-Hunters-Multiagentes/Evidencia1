@@ -200,6 +200,21 @@ def initialize_basuras(initial_position):
     return basuras
 
 
+def pick_decision(robot_position, direction):
+    if direction == "up":
+        robot_position[1] += 1
+        return robot_position
+    elif direction == "down":
+        robot_position[1] -= 1
+        return robot_position
+    elif direction == "left":
+        robot_position[0] -= 1
+        return robot_position
+    elif direction == "right":
+        robot_position[0] += 1
+        return robot_position
+
+
 def initialize_cars(DimBoard, initial_position):
     """
     Initialize the cars and place them based on the initial positions of agents.
@@ -244,6 +259,14 @@ def update_movements(round_index, cars):
             for move in round:
                 for car in cars:
                     if car.id == move.agent_id:
+                        if move.action == "pick_up":
+                            pick_cell = pick_decision(
+                                [move.cell[0], move.cell[1]], move.looking_direction
+                            )
+                            pick_cell = [int(c) for c in pick_cell]
+                            box = Basura.boxes_positions[tuple(pick_cell)].pop()
+                            box.target_reference = car
+
                         car.move(move.cell[0], move.cell[1])
                         car.rotatedir(move.looking_direction)
                         break
@@ -350,7 +373,10 @@ def Init(camera):
     basuras = initialize_basuras(initial_position)
 
     for basura in basuras:
-        Basura.boxes_positions[(basura.Position[0], basura.Position[1])] = basura
+        key = (int(basura.Position[0]), int(basura.Position[1]))
+        if key not in Basura.boxes_positions:
+            Basura.boxes_positions[key] = []
+        Basura.boxes_positions[key].append(basura)
 
     # for car in cars:
     #     print(car.Position)
