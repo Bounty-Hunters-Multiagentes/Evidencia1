@@ -66,14 +66,14 @@ DimBoard = 200
 pygame.init()
 
 cars = []
-ncars = 10
+ncars = 5
 
 basuras = []
 nbasuras = 5
 
 
 rounds = None
-initial_setup = None
+initial_position = None
 
 
 def execute_notebook_code(notebook_path):
@@ -113,6 +113,8 @@ def execute_notebook_code(notebook_path):
     return module
 
 def simulate_game():
+    global initial_position
+    global rounds
     # Import the notebook as a module
     simulation_module = execute_notebook_code('../agentpy/mainSimulation.ipynb')
     
@@ -134,7 +136,7 @@ def simulate_game():
         print("New Test Round")
         for move in round:
             print(move)
-    
+    initial_position = model.initial_position
     print(model.initial_position)
 
 def Axis():
@@ -224,6 +226,48 @@ def display():
     for basura in basuras:
         basura.draw()
 
+def initialize_cars(DimBoard, ncars):
+    """
+    Initialize the cars and place them based on the initial positions of agents.
+
+    Args:
+        DimBoard: The OpenGL board dimension (e.g., 200x200).
+        ncars: Number of cars to initialize.
+
+    Returns:
+        List of initialized Car objects.
+    """
+    # Extract board dimensions and scale factor
+    rows, columns = initial_position.board_dimensions
+    scale_factor_x = 400 / columns  # Scale factor for x-axis (columns)
+    scale_factor_y = 400 / rows     # Scale factor for y-axis (rows)
+
+    cars = []
+
+    for i in range(ncars):
+        car = Car(DimBoard, 1.0, 5.0)  # Initialize car
+        if i < len(initial_position.agents):
+            agent_id, initial_pos = initial_position.agents[i]
+
+            # Center the agent grid around (0, 0) of the OpenGL board
+            # Map the agent position from grid [0,0] to [columns-1, rows-1]
+            # to the OpenGL range [-400/2, 400/2]
+
+            # Compute scaled x and z positions for OpenGL coordinates
+            scaled_x = (initial_pos[1] - columns / 2) * scale_factor_x
+            scaled_z = (initial_pos[0] - rows / 2) * scale_factor_y
+
+            # Update car position
+            car.Position = [scaled_x, car.scale, scaled_z]
+
+        cars.append(car)
+
+    # Link cars for collision detection
+    for car in cars:
+        car.getCars(cars)
+
+    return cars
+
 #Cargamos textura
 def Init():
     global ground_texture
@@ -254,12 +298,25 @@ def Init():
     init_basura_objects()
     
     simulate_game()
+    global cars 
+    global initial_position
     
     # Iniciamos carros
+    cars = initialize_cars(DimBoard, ncars)
+    print("these are the cars")
+    
+    for car in cars:
+        print (car.Position)
+    # print(cars)
+    """
     for i in range(ncars):
         cars.append(Car(DimBoard, 1.0, 5.0))
     for car in cars:
         car.getCars(cars)
+    """
+    """
+    -200 A 200 EN X y Y
+    """
     
 done = False
 Init()
