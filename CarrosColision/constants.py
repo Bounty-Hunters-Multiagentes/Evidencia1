@@ -34,8 +34,8 @@ def toggle_camera_view(camera: Camera):
     if camera.UP_Y == 1:
         # Top view config
         camera.UP_Y = 0
-        camera.UP_Z = 0
-        camera.EYE_X = 1
+        camera.UP_Z = -1
+        camera.EYE_X = 0
         camera.EYE_Y = 400
         camera.EYE_Z = 0
     else:
