@@ -26,7 +26,9 @@ from Basura import Basura
 from Carro import Car
 from constants import (
     ASPHALT_ASSET,
+    COLUMNS,
     NB_PATH,
+    ROWS,
     RUBRIK_ASSET,
     X_MAX,
     X_MIN,
@@ -88,8 +90,8 @@ def simulate_game():
 
     parameters = {
         "steps": 100,
-        "n": 20,
-        "m": 20,
+        "n": COLUMNS,
+        "m": ROWS,
         "total_boxes": 50,
     }
 
@@ -164,17 +166,28 @@ def load_texture(image_path):
     return texture_id
 
 
+def map_coords(x, z):
+    board_size = DimBoard * 2
+    scale_factor_x = board_size / COLUMNS  # Scale factor for x-axis (columns)
+    scale_factor_z = board_size / ROWS  # Scale factor for y-axis (rows)
+
+    scaled_x = (x - COLUMNS / 2) * scale_factor_x
+    scaled_z = (z - ROWS / 2) * scale_factor_z
+
+    return scaled_x, scaled_z
+
+
 def initialize_basuras(initial_position):
     """Inicializa los objetos basura en posiciones aleatorias"""
     rows, columns = initial_position.board_dimensions
     scale_factor_x = 400 / columns  # Scale factor for x-axis (columns)
-    scale_factor_y = 400 / rows  # Scale factor for y-axis (rows)
+    scale_factor_z = 400 / rows  # Scale factor for y-axis (rows)
 
     basuras = []
 
     for box in initial_position.box_positions:
-        scaled_x = (box[1] - columns / 2) * scale_factor_x
-        scaled_z = (box[0] - rows / 2) * scale_factor_y
+        scaled_x = (box[0] - columns / 2) * scale_factor_x
+        scaled_z = (box[1] - rows / 2) * scale_factor_z
         position = [
             scaled_x + 10,
             2.0,
@@ -190,6 +203,50 @@ def initialize_basuras(initial_position):
     return basuras
 
 
+def initialize_cars(DimBoard, initial_position):
+    """
+    Initialize the cars and place them based on the initial positions of agents.
+
+    Args:
+        DimBoard: The OpenGL board dimension (e.g., 200x200).
+        initial_position: the state of the initial positions in the simulation.
+
+    Returns:
+        List of initialized Car objects.
+    """
+    # Extract board dimensions and scale factor
+    rows, columns = initial_position.board_dimensions
+    scale_factor_x = 400 / columns  # Scale factor for x-axis (columns)
+    scale_factor_y = 400 / rows  # Scale factor for y-axis (rows)
+
+    cars = []
+
+    for i in range(len(initial_position.agents)):
+        agent_id, initial_pos = initial_position.agents[i]
+
+        # Center the agent grid around (0, 0) of the OpenGL board
+        # Map the agent position from grid [0,0] to [columns-1, rows-1]
+        # to the OpenGL range [-400/2, 400/2]
+
+        # Compute scaled x and z positions for OpenGL coordinates
+        scaled_x = (initial_pos[0] - columns / 2) * scale_factor_x
+        scaled_z = (initial_pos[1] - rows / 2) * scale_factor_y
+
+        car = Car(DimBoard, 1.0, 5.0, id=agent_id)  # Initialize car
+        # Update car position
+        car.Position = [scaled_x + 10, car.scale, scaled_z + 10]
+        car.rotatedir("up")
+
+        cars.append(car)
+
+    # Link cars for collision detection
+    for car in cars:
+        car.getCars(cars)
+        car.getBoxes(basuras)
+
+    return cars
+
+
 def update_movements(round_index, cars):
     """Actualiza los movimientos de los carros en cada ronda de la simulación"""
 
@@ -199,13 +256,19 @@ def update_movements(round_index, cars):
             for move in round:
                 for car in cars:
                     if car.id == move.agent_id:
-                        car.move(move.cell[1], move.cell[0])
+                        x, z = map_coords(move.cell[0], move.cell[1])
+                        # print(move.cell[0], move.cell[1])
+                        # x, z = map_coords(19, 19)
+
+                        car.move(x + 10, z + 10)
                         car.rotatedir(move.looking_direction)
                         break
             round_index += 1
         else:
             pass
             # print("SIMULATION FINISHED")
+
+    return round_index
 
 
 def display(round_index, cars, basuras, ground_texture):
@@ -240,51 +303,7 @@ def display(round_index, cars, basuras, ground_texture):
     for basura in basuras:
         basura.draw()
 
-    update_movements(round_index, cars)
-
-
-def initialize_cars(DimBoard, initial_position):
-    """
-    Initialize the cars and place them based on the initial positions of agents.
-
-    Args:
-        DimBoard: The OpenGL board dimension (e.g., 200x200).
-        initial_position: the state of the initial positions in the simulation.
-
-    Returns:
-        List of initialized Car objects.
-    """
-    # Extract board dimensions and scale factor
-    rows, columns = initial_position.board_dimensions
-    scale_factor_x = 400 / columns  # Scale factor for x-axis (columns)
-    scale_factor_y = 400 / rows  # Scale factor for y-axis (rows)
-
-    cars = []
-
-    for i in range(len(initial_position.agents)):
-        agent_id, initial_pos = initial_position.agents[i]
-
-        # Center the agent grid around (0, 0) of the OpenGL board
-        # Map the agent position from grid [0,0] to [columns-1, rows-1]
-        # to the OpenGL range [-400/2, 400/2]
-
-        # Compute scaled x and z positions for OpenGL coordinates
-        scaled_x = (initial_pos[1] - columns / 2) * scale_factor_x
-        scaled_z = (initial_pos[0] - rows / 2) * scale_factor_y
-
-        car = Car(DimBoard, 1.0, 5.0, id=agent_id)  # Initialize car
-        # Update car position
-        car.Position = [scaled_x + 10, car.scale, scaled_z + 10]
-        car.rotatedir("up")
-
-        cars.append(car)
-
-    # Link cars for collision detection
-    for car in cars:
-        car.getCars(cars)
-        car.getBoxes(basuras)
-
-    return cars
+    return update_movements(round_index, cars)
 
 
 def are_movements_done(cars):
@@ -348,7 +367,7 @@ def Init(camera):
     # for car in cars:
     #     print(car.Position)
 
-    return cars, basuras, rounds, ground_texture
+    return cars, basuras, rounds, ground_texture, screen
 
 
 if __name__ == "__main__":
@@ -357,7 +376,8 @@ if __name__ == "__main__":
     cars = []
     basuras = []
     camera = Camera()
-    cars, basuras, rounds, ground_texture = Init(camera)
+    cars, basuras, rounds, ground_texture, screen = Init(camera)
+    font = pygame.font.Font("freesansbold.ttf", 32)
 
     while not done:
         for event in pygame.event.get():
@@ -369,9 +389,11 @@ if __name__ == "__main__":
                     toggle_camera_view(camera)
                     load_camera(camera)
 
-        display(cars, basuras, ground_texture)
+        round_index = display(round_index, cars, basuras, ground_texture)
 
         pygame.display.flip()
         pygame.time.wait(10)
+        text = font.render(f"Round {round_index + 1}", True, (255, 0, 0))
+        screen.blit(text, (0, 0))
 
     pygame.quit()

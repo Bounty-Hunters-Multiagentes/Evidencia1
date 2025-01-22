@@ -17,6 +17,8 @@ screen_height = 500
 
 # Dimension del plano
 DimBoard = 200
+COLUMNS = 20
+ROWS = 20
 
 # File paths
 NB_PATH = "../agentpy/mainSimulation.ipynb"

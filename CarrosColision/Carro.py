@@ -31,7 +31,7 @@ class Car:
             ]
         )
 
-        self.scale = Scale + 2
+        self.scale = Scale  # + 2
         self.radio = math.sqrt(self.scale * self.scale + self.scale * self.scale)
         self.DimBoard = dim
         self.id = id
@@ -81,9 +81,9 @@ class Car:
 
     def move(self, target_x, target_z):
         self.target_position = [
-            target_x * self.scale,
+            target_x,  # * self.scale,
             self.Position[1],
-            target_z * self.scale,
+            target_z,  # * self.scale,
         ]
         self.is_moving = True
 
@@ -131,10 +131,10 @@ class Car:
                 new_z = self.Position[2] + self.Direction[2]
 
                 # checar que no se nos vaya
-                if abs(new_x) <= self.DimBoard:
-                    self.Position[0] = new_x
-                if abs(new_z) <= self.DimBoard:
-                    self.Position[2] = new_z
+                # if abs(new_x) <= self.DimBoard:
+                self.Position[0] = new_x
+                # if abs(new_z) <= self.DimBoard:
+                self.Position[2] = new_z
 
     def update(self):
         self.CollitionDetection()
