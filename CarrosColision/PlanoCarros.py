@@ -37,6 +37,7 @@ from constants import (
     DimBoard,
     screen_height,
     screen_width,
+    toggle_camera_view,
 )
 from nbconvert import PythonExporter
 
@@ -344,8 +345,8 @@ def Init(camera):
     # Iniciamos basuras
     basuras = initialize_basuras(initial_position)
 
-    for car in cars:
-        print(car.Position)
+    # for car in cars:
+    #     print(car.Position)
 
     return cars, basuras, rounds, ground_texture
 
@@ -362,6 +363,11 @@ if __name__ == "__main__":
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
+            if event.type == pygame.KEYDOWN:
+                # Toggle top view and perspective view
+                if event.key == pygame.K_t:
+                    toggle_camera_view(camera)
+                    load_camera(camera)
 
         display(cars, basuras, ground_texture)
 
