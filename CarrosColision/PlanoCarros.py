@@ -132,12 +132,12 @@ def simulate_game():
     results = model.run()
     rounds = model.rounds
     
-    for round in rounds:
-        print("New Test Round")
-        for move in round:
-            print(move)
+    # for round in rounds:
+    #     print("New Test Round")
+    #     for move in round:
+    #         print(move)
     initial_position = model.initial_position
-    print(model.initial_position)
+    # print(model.initial_position)
 
 def Axis():
     glShadeModel(GL_FLAT)
@@ -185,17 +185,21 @@ def load_texture(image_path):
 
     return texture_id
 
-def init_basura_objects():
+def init_basura_objects(initial_position):
     """Inicializa los objetos basura en posiciones aleatorias"""
-    for _ in range(nbasuras):
-        # Genera posiciones aleatorias dentro del tablero
-        x = random.uniform(-DimBoard + 20, DimBoard - 20)  # Margen de 20 unidades
-        z = random.uniform(-DimBoard + 20, DimBoard - 20)
-        position = [x, 2.0, z]  # Y = 2.0 para que esté ligeramente elevado sobre el plano
+    rows, columns = initial_position.board_dimensions
+    scale_factor_x = 400 / columns  # Scale factor for x-axis (columns)
+    scale_factor_y = 400 / rows     # Scale factor for y-axis (rows)
+    
+    for box in initial_position.box_positions:
+        print(box)
+        scaled_x = (box[1] - columns / 2) * scale_factor_x
+        scaled_z = (box[0] - rows / 2) * scale_factor_y
+        position = [scaled_x, 2.0, scaled_z] # Y = 2.0 para que esté ligeramente elevado sobre el plano
+        
         try:
             basura = Basura(position, "../Assets/rubik.png")
             basuras.append(basura)
-            print(f"Objeto basura creado en posición: {position}")
         except Exception as e:
             print(f"Error al crear objeto basura: {e}")
 
@@ -217,10 +221,13 @@ def display():
 
     glDisable(GL_TEXTURE_2D)
 
+    if are_movements_done(cars):
+        # Si ya no hay movimientos, obtenemos el siguiente movimiento de la simulación
+        pass
     # Dibujamos carros y los actualizamos
     for car in cars:
         car.draw()
-        car.update()
+        car.update_new()
     
     # Dibujamos objetos basura
     for basura in basuras:
@@ -268,6 +275,13 @@ def initialize_cars(DimBoard, ncars):
 
     return cars
 
+
+def are_movements_done(cars):
+    for car in cars:
+        if car.is_moving:
+            return False
+    return True
+
 #Cargamos textura
 def Init():
     global ground_texture
@@ -295,12 +309,13 @@ def Init():
         sys.exit()
     
     # Inicializamos objetos basura
-    init_basura_objects()
     
     simulate_game()
+
     global cars 
     global initial_position
     
+    init_basura_objects(initial_position)
     # Iniciamos carros
     cars = initialize_cars(DimBoard, ncars)
     print("these are the cars")
