@@ -195,7 +195,7 @@ def init_basura_objects(initial_position):
         print(box)
         scaled_x = (box[1] - columns / 2) * scale_factor_x
         scaled_z = (box[0] - rows / 2) * scale_factor_y
-        position = [scaled_x, 2.0, scaled_z] # Y = 2.0 para que esté ligeramente elevado sobre el plano
+        position = [scaled_x + 10, 2.0, scaled_z + 10] # Y = 2.0 para que esté ligeramente elevado sobre el plano
         
         try:
             basura = Basura(position, "../Assets/rubik.png")
@@ -221,7 +221,8 @@ def update_movements(cars):
                         break
             round_index += 1
         else:
-            print("SIMULATION FINISHED")
+            pass
+            # print("SIMULATION FINISHED")
 
 
 def display():
@@ -290,7 +291,7 @@ def initialize_cars(DimBoard, ncars):
 
             car = Car(DimBoard, 1.0, 5.0, id=agent_id)  # Initialize car
             # Update car position
-            car.Position = [scaled_x, car.scale, scaled_z]
+            car.Position = [scaled_x + 10, car.scale, scaled_z + 10]
 
         cars.append(car)
 
@@ -341,7 +342,29 @@ def Init():
     global cars 
     global initial_position
     
+    
+    """
+    # Initialize BASURA OBJECTS from (0, 0) to (19, 19)
+    initial_position.box_positions = [] 
+    for x in range(20):  # Rows
+        for y in range(20):  # Columns
+            initial_position.box_positions.append([x, y])
+    """
+
+    
     init_basura_objects(initial_position)
+    
+    """
+    # Initialize agents with all coordinates from (0, 0) to (19, 19)
+    initial_position.agents = []
+    agent_id = 0
+    
+    for x in range(20):  # Rows
+        for y in range(20):  # Columns
+            initial_position.agents.append([agent_id, [x, y]])
+            agent_id += 1
+    """
+
     # Iniciamos carros
     cars = initialize_cars(DimBoard, ncars)
     print("these are the cars")
