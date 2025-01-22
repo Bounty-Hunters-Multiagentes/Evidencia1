@@ -51,10 +51,72 @@ class Car:
         self.collision = False
         self.Cars = []
         glutInit()
+        
+        
+        # Animation properties
+        self.target_position = None
+        self.target_rotation = None
+        self.current_rotation = 0.0
+        self.is_moving = False
+        self.animation_speed = 1.0 # unidades por frame
+        self.rotation_speed = 10.0 # grados por frame
 
 
     def getCars(self, NCars):
         self.Cars = NCars
+        
+    def move(self, target_x, target_z):
+        self.target_position = [target_x * self.scale, self.Position[1], target_z * self.scale]
+        self.is_moving = True
+        
+        dx = self.target_position[0] - self.Position[0]
+        dz = self.target_position[2] - self.Position[2]
+        length = math.sqrt(dx * dx + dz * dz)
+        if length > 0:
+            self.Direction[0] = (dx/length) * self.animation_speed
+            self.Direction[2] = (dz/length) * self.animation_speed
+            
+    def rotatedir(self, direction):
+        rotation_map = {
+            "up": 0.0,
+            "right": 90.0,
+            "down": 180.0,
+            "left": 270.0,
+        }
+        
+        if direction in rotation_map:
+            self.target_rotation = rotation_map[direction]
+            
+    def update_new(self):
+        if self.target_rotation is not None:
+            diff = (self.target_rotation - self.current_rotation + 180) % 360 - 180
+            if abs(diff) < self.rotation_speed:
+                self.current_rotation = self.target_rotation
+                self.target_rotation = None
+            else:
+                self.current_rotation += math.copysign(self.rotation_speed, diff)
+                self.current_rotation %= 360
+
+        if self.target_position and self.is_moving:
+            dx = self.target_position[0] - self.Position[0]
+            dz = self.target_position[2] - self.Position[2]
+            distance = math.sqrt(dx*dx + dz*dz)
+            
+            if distance < self.animation_speed:
+                # ya llegamos, ya no te muevas
+                self.Position = self.target_position
+                self.is_moving = False
+                self.target_position = None
+            else:
+                # nos movemos
+                new_x = self.Position[0] + self.Direction[0]
+                new_z = self.Position[2] + self.Direction[2]
+                
+                # checar que no se nos vaya
+                if abs(new_x) <= self.DimBoard:
+                    self.Position[0] = new_x
+                if abs(new_z) <= self.DimBoard:
+                    self.Position[2] = new_z
 
     def update(self):
         self.CollitionDetection()
@@ -133,6 +195,9 @@ class Car:
         glScaled(self.scale, self.scale, self.scale)
         
         # Calculate rotation angle based on direction
+        
+        # TASK - Cuando se implemente el agente, reemplazar lo posterior con:
+        # glRotatef(self.current_rotation, 0, 1, 0)
         angle = math.atan2(self.Direction[2], self.Direction[0])
         glRotatef(math.degrees(angle), 0, 1, 0)
         
