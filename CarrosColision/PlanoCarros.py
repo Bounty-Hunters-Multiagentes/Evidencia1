@@ -98,12 +98,12 @@ def simulate_game():
         "n": COLUMNS,
         "m": ROWS,
         "total_boxes": 50,
+        'discharge_side': 4,
         "seed": 22,
     }
 
     model = BoxWarehouseModel(parameters)
     model.run()
-
     # for round in rounds:
     #     print("New Test Round")
     #     for move in round:
