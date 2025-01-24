@@ -99,6 +99,12 @@ def simulate_game():
         "m": ROWS,
         "total_boxes": 50,
         'discharge_side': 4,
+        'sergio_agents':  0,
+        'rodrigo_agents': 5,
+        'pepe_agents': 0,
+        'oscar_agents': 0,
+        'hector_agents': 0,
+        'random_agents': 0,
         "seed": 22,
     }
 
