@@ -21,6 +21,7 @@ ROWS = 20
 # Altura base de los objetos
 # Y = 2.0 para que esté ligeramente elevado sobre el plano
 BASE_Y = 2.0
+DISCARGE_Y = 0.3
 
 
 # File paths

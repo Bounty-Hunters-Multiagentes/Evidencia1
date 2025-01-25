@@ -31,6 +31,7 @@ from constants import (
     ASPHALT_ASSET,
     BASE_Y,
     COLUMNS,
+    DISCARGE_Y,
     NB_PATH,
     ROWS,
     RUBRIK_ASSET,
@@ -98,13 +99,13 @@ def simulate_game():
         "n": COLUMNS,
         "m": ROWS,
         "total_boxes": 50,
-        'discharge_side': 4,
-        'sergio_agents':  0,
-        'rodrigo_agents': 5,
-        'pepe_agents': 0,
-        'oscar_agents': 0,
-        'hector_agents': 0,
-        'random_agents': 0,
+        "discharge_side": 4,
+        "sergio_agents": 0,
+        "rodrigo_agents": 5,
+        "pepe_agents": 0,
+        "oscar_agents": 0,
+        "hector_agents": 0,
+        "random_agents": 0,
         "seed": 22,
     }
 
@@ -271,23 +272,27 @@ def initialize_cars(DimBoard, initial_position):
 
     return cars
 
+
 def initialize_discharge_cells(initial_position):
     discharge_cells = initial_position.discharge_positions
     cell_size_x = (DimBoard * 2) / COLUMNS
     cell_size_z = (DimBoard * 2) / ROWS
-    
+
     discharge_data = []
-    for (x, z) in discharge_cells:
+    for x, z in discharge_cells:
         scaled_x, scaled_z = map_coords(x, z)
-        discharge_data.append({
-            "x": scaled_x,
-            "z": scaled_z,
-            "size_x": cell_size_x,
-            "size_z": cell_size_z,
-            "color": (0.0, 1.0, 0.0, 0.3) # verdesin y un poco transparente
-        })
-    
+        discharge_data.append(
+            {
+                "x": scaled_x + cell_size_x / 2,
+                "z": scaled_z + cell_size_z / 2,
+                "size_x": cell_size_x,
+                "size_z": cell_size_z,
+                "color": (0.0, 1.0, 0.0, 0.3),  # verdesin y un poco transparente
+            }
+        )
+
     return discharge_data
+
 
 def draw_discharge_cells(discharge_cells_data):
     glEnable(GL_BLEND)
@@ -296,13 +301,22 @@ def draw_discharge_cells(discharge_cells_data):
     for cell in discharge_cells_data:
         glColor4f(*cell["color"])
         glBegin(GL_QUADS)
-        glVertex3f(cell["x"] - cell["size_x"]/2, 0.1, cell["z"] - cell["size_z"]/2)
-        glVertex3f(cell["x"] + cell["size_x"]/2, 0.1, cell["z"] - cell["size_z"]/2)
-        glVertex3f(cell["x"] + cell["size_x"]/2, 0.1, cell["z"] + cell["size_z"]/2)
-        glVertex3f(cell["x"] - cell["size_x"]/2, 0.1, cell["z"] + cell["size_z"]/2)
+        glVertex3f(
+            cell["x"] - cell["size_x"] / 2, DISCARGE_Y, cell["z"] - cell["size_z"] / 2
+        )
+        glVertex3f(
+            cell["x"] + cell["size_x"] / 2, DISCARGE_Y, cell["z"] - cell["size_z"] / 2
+        )
+        glVertex3f(
+            cell["x"] + cell["size_x"] / 2, DISCARGE_Y, cell["z"] + cell["size_z"] / 2
+        )
+        glVertex3f(
+            cell["x"] - cell["size_x"] / 2, DISCARGE_Y, cell["z"] + cell["size_z"] / 2
+        )
         glEnd()
 
     glDisable(GL_BLEND)
+
 
 def update_movements(round_index, cars, memo):
     """Actualiza los movimientos de los carros en cada ronda de la simulación"""
@@ -374,7 +388,7 @@ def display(round_index, cars, basuras, ground_texture, discharge_cells_data, me
     # basuras[0].target_reference = cars[0]
     for basura in basuras:
         basura.update()
-        
+
     # Dibujamos discharge cells
     draw_discharge_cells(discharge_cells_data)
 
@@ -439,7 +453,7 @@ def Init(camera):
 
     # Iniciamos basuras
     basuras = initialize_basuras(initial_position)
-    
+
     # Iniciamos celdas de descarga
     discharge_cells_data = initialize_discharge_cells(initial_position)
 
@@ -499,9 +513,13 @@ if __name__ == "__main__":
         round_index = min(max(round_index, 0), len(rounds) - 1)
 
         if MANUAL_IT:
-            display(round_index, cars, basuras, ground_texture, discharge_cells_data, memo)
+            display(
+                round_index, cars, basuras, ground_texture, discharge_cells_data, memo
+            )
         else:
-            round_index = display(round_index, cars, basuras, ground_texture, discharge_cells_data, memo)
+            round_index = display(
+                round_index, cars, basuras, ground_texture, discharge_cells_data, memo
+            )
 
         pygame.display.set_caption(f"OpenGL: Cars (t = {round_index+1}/{len(rounds)})")
 
