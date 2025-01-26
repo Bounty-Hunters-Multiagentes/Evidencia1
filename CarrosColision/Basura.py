@@ -115,6 +115,9 @@ class Basura:
         glPushMatrix()
         glTranslatef(x, self.Position[1], z)
         glScaled(self.scale, self.scale, self.scale)
+        if self.target_reference:
+            glScaled(0.8, 0.8, 0.8)
+            glTranslatef(0, 0.5, 0)
         glBindTexture(GL_TEXTURE_2D, self.texture)
         glEnable(GL_TEXTURE_2D)
 
