@@ -503,9 +503,9 @@ if __name__ == "__main__":
                 if event.key == pygame.K_t:
                     toggle_camera_view(camera)
                     load_camera(camera)
-                if event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_RIGHT and are_movements_done(cars):
                     round_index += 1
-                if event.key == pygame.K_LEFT:
+                if event.key == pygame.K_LEFT and are_movements_done(cars):
                     round_index -= 1
                 if event.key == pygame.K_d:
                     debug(cars, basuras)
